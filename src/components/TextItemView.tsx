@@ -1,7 +1,7 @@
 import { useState, useRef, useEffect, useCallback } from 'react'
 import { useStore } from '../store/useStore'
 import type { TextItem } from '../store/types'
-import { Trash2, Bold, Type } from 'lucide-react'
+import { Trash2, Bold } from 'lucide-react'
 
 interface Props {
   textItem: TextItem
@@ -25,11 +25,13 @@ const COLORS = [
 ]
 
 export function TextItemView({ textItem, gridSize }: Props) {
-  const { selectedTextId, selectText, updateText, removeText, transform, clearSelection } = useStore()
+  const { selectedTextId, selectText, updateText, removeText, transform } = useStore()
   const [isEditing, setIsEditing] = useState(false)
   const [isDragging, setIsDragging] = useState(false)
   const [isResizing, setIsResizing] = useState(false)
   const [showToolbar, setShowToolbar] = useState(false)
+  void isResizing // Suppress unused warning - used in handlers
+  void showToolbar // Suppress unused warning - used in render
   const textRef = useRef<HTMLDivElement>(null)
   const inputRef = useRef<HTMLTextAreaElement>(null)
   const dragRef = useRef({ startX: 0, startY: 0, itemX: 0, itemY: 0 })

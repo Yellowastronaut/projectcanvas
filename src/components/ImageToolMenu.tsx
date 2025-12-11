@@ -40,9 +40,6 @@ export function ImageToolMenu({ image, scale }: Props) {
   // Inverse scale to keep menu visually consistent regardless of zoom
   const inverseScale = 1 / scale
 
-  // Get display name (truncate if too long)
-  const displayName = image.name.length > 15 ? image.name.substring(0, 12) + '...' : image.name
-
   return (
     <div
       className="absolute left-1/2 z-50 animate-tool-menu-in"

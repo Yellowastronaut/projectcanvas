@@ -45,7 +45,7 @@ const RESOLUTIONS = [
   { id: '4k', name: '4K' },
 ]
 
-interface ToolSlotProps {
+interface _ToolSlotProps {
   icon: React.ReactNode
   label: string
   value?: string
@@ -54,7 +54,7 @@ interface ToolSlotProps {
   onClick?: () => void
 }
 
-function ToolSlot({ icon, label, value, isActive, onClick }: ToolSlotProps) {
+function _ToolSlot({ icon, label, value, isActive, onClick }: Omit<_ToolSlotProps, 'isDashed'>) {
   return (
     <button
       onClick={onClick}
@@ -78,6 +78,7 @@ function ToolSlot({ icon, label, value, isActive, onClick }: ToolSlotProps) {
     </button>
   )
 }
+void _ToolSlot // Reserved for future use
 
 interface ImageAIModifierProps {
   image: ImageItem

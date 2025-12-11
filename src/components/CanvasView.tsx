@@ -42,7 +42,7 @@ export function CanvasView() {
   const [canvasMenu, setCanvasMenu] = useState<CanvasMenuState | null>(null)
   const fileInputRef = useRef<HTMLInputElement>(null)
 
-  const { images, textItems, transform, setTransform, addImage, addText, selectImage, selectedImageId, selectedImageIds, selectMultipleImages, clearSelection, isAnimating, isChatOpen, removeImage } = useStore()
+  const { images, textItems, transform, setTransform, addImage, addText, selectImage, selectedImageId, selectMultipleImages, clearSelection, isAnimating, isChatOpen, removeImage } = useStore()
 
   // Calculate chat panel offset (w-96 = 384px + 16px margin + 16px padding)
   const chatPanelWidth = isChatOpen ? 416 : 0

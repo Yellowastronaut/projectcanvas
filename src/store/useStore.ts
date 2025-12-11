@@ -197,7 +197,7 @@ export const useStore = create<AppState>((set, get) => ({
   },
 
   sendChatToAI: async (userMessage: string, includeSelectedImage: boolean = false) => {
-    const { addMessage, addImage, messages, selectedImageId, images } = get()
+    const { addMessage, messages, selectedImageId, images } = get()
 
     // Get the selected image only if explicitly requested
     const selectedImage = includeSelectedImage && selectedImageId

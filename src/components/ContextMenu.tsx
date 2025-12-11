@@ -62,7 +62,7 @@ interface ContextMenuProps {
   onAction: (action: string) => void
 }
 
-export function ContextMenu({ x, y, imageId, imageName, onClose, onAction }: ContextMenuProps) {
+export function ContextMenu({ x, y, imageId, imageName: _imageName, onClose, onAction }: ContextMenuProps) {
   const [searchQuery, setSearchQuery] = useState('')
 
   const menuItems = [
