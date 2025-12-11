@@ -1,9 +1,8 @@
-import { useState, useRef, useEffect } from 'react'
 import { Minus, Plus, Maximize, LayoutGrid } from 'lucide-react'
 import { useStore } from '../store/useStore'
 import { Button } from '@/components/ui/button'
 import { Separator } from '@/components/ui/separator'
-import { cn } from '@/lib/utils'
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover'
 
 const MIN_SCALE = 0.1
 const MAX_SCALE = 5
@@ -30,23 +29,10 @@ const MenuItem = ({ label, shortcut, onClick }: MenuItemProps) => (
 )
 
 export function ZoomControls() {
-  const [isOpen, setIsOpen] = useState(false)
-  const menuRef = useRef<HTMLDivElement>(null)
   const { transform, setTransform, images, updateImage, isChatOpen } = useStore()
 
   // Calculate chat panel offset (w-96 = 384px + 16px margin + 16px padding)
   const chatPanelWidth = isChatOpen ? 416 : 0
-
-  // Close menu when clicking outside
-  useEffect(() => {
-    const handleClickOutside = (event: MouseEvent) => {
-      if (menuRef.current && !menuRef.current.contains(event.target as Node)) {
-        setIsOpen(false)
-      }
-    }
-    document.addEventListener('mousedown', handleClickOutside)
-    return () => document.removeEventListener('mousedown', handleClickOutside)
-  }, [])
 
   const zoomIn = () => {
     setTransform({ scale: Math.min(MAX_SCALE, transform.scale * 1.25) })
@@ -61,7 +47,6 @@ export function ZoomControls() {
 
     if (images.length === 0) {
       setTransform({ scale: newScale, x: 0, y: 0 })
-      setIsOpen(false)
       return
     }
 
@@ -85,13 +70,11 @@ export function ZoomControls() {
     const y = viewportHeight / 2 - centerY * newScale
 
     setTransform({ scale: newScale, x, y }, true)
-    setIsOpen(false)
   }
 
   const fitToContent = () => {
     if (images.length === 0) {
       setTransform({ scale: 1, x: 0, y: 0 })
-      setIsOpen(false)
       return
     }
 
@@ -121,13 +104,10 @@ export function ZoomControls() {
     const y = viewportHeight / 2 - centerY * scale
 
     setTransform({ scale, x, y }, true)
-    setIsOpen(false)
   }
 
   const autoLayout = () => {
     if (images.length === 0) return
-
-    setIsOpen(false)
 
     const gap = 24
     const padding = 60
@@ -224,14 +204,77 @@ export function ZoomControls() {
   const zoomPercentage = Math.round(transform.scale * 100)
 
   return (
-    <div ref={menuRef} className="absolute bottom-6 left-6 flex flex-col items-start gap-2 z-50">
+    <div className="absolute bottom-6 left-6 flex flex-col items-start gap-2 z-50">
+      <Popover>
+        {/* Trigger Pill */}
+        <div className="bg-white border border-slate-200 shadow-lg shadow-slate-200/50 rounded-full h-10 flex items-center px-1">
+          {/* Minus Button */}
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={zoomOut}
+            className="w-8 h-8 rounded-full hover:bg-slate-50 text-slate-500 hover:text-primary"
+            title="Zoom out (Cmd -)"
+          >
+            <Minus size={16} />
+          </Button>
 
-      {/* Popover Menu */}
-      {isOpen && (
-        <div className="w-56 bg-white/95 backdrop-blur-sm border border-slate-100 rounded-2xl shadow-[0_8px_30px_rgb(0,0,0,0.08)] py-2 mb-1">
+          {/* Percentage (clickable for menu) */}
+          <PopoverTrigger asChild>
+            <Button
+              variant="ghost"
+              className="px-3 h-full text-sm font-mono text-slate-700 hover:text-slate-900 hover:bg-transparent min-w-[60px]"
+            >
+              {zoomPercentage}%
+            </Button>
+          </PopoverTrigger>
 
+          {/* Plus Button */}
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={zoomIn}
+            className="w-8 h-8 rounded-full hover:bg-slate-50 text-slate-500 hover:text-primary"
+            title="Zoom in (Cmd +)"
+          >
+            <Plus size={16} />
+          </Button>
+
+          {/* Divider */}
+          <Separator orientation="vertical" className="h-5 mx-1" />
+
+          {/* Fit to Screen */}
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={fitToContent}
+            className="w-8 h-8 rounded-full hover:bg-slate-50 text-slate-500 hover:text-primary"
+            title="Fit to content"
+          >
+            <Maximize size={16} />
+          </Button>
+
+          {/* Auto Layout */}
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={autoLayout}
+            className="w-8 h-8 rounded-full hover:bg-slate-50 text-slate-500 hover:text-primary"
+            title="Auto-arrange images"
+          >
+            <LayoutGrid size={16} />
+          </Button>
+        </div>
+
+        {/* Popover Menu */}
+        <PopoverContent
+          side="top"
+          align="start"
+          sideOffset={8}
+          className="w-56 bg-white/95 backdrop-blur-sm border border-slate-100 rounded-2xl shadow-[0_8px_30px_rgb(0,0,0,0.08)] p-0"
+        >
           {/* Actions */}
-          <div className="flex flex-col">
+          <div className="flex flex-col py-2">
             <MenuItem label="Zoom in" shortcut="⌘ +" onClick={zoomIn} />
             <MenuItem label="Zoom out" shortcut="⌘ -" onClick={zoomOut} />
             <MenuItem label="Fit to Screen" shortcut="⇧ 1" onClick={fitToContent} />
@@ -239,77 +282,16 @@ export function ZoomControls() {
           </div>
 
           {/* Divider */}
-          <Separator className="my-2 mx-4" />
+          <Separator className="mx-4" />
 
           {/* Presets */}
-          <div className="flex flex-col">
+          <div className="flex flex-col py-2">
             <MenuItem label="Zoom to 50%" onClick={() => zoomTo(50)} />
             <MenuItem label="Zoom to 100%" onClick={() => zoomTo(100)} />
             <MenuItem label="Zoom to 200%" onClick={() => zoomTo(200)} />
           </div>
-        </div>
-      )}
-
-      {/* Trigger Pill */}
-      <div className="bg-white border border-slate-200 shadow-lg shadow-slate-200/50 rounded-full h-10 flex items-center px-1">
-
-        {/* Minus Button */}
-        <Button
-          variant="ghost"
-          size="icon"
-          onClick={zoomOut}
-          className="w-8 h-8 rounded-full hover:bg-slate-50 text-slate-500 hover:text-primary"
-          title="Zoom out (Cmd -)"
-        >
-          <Minus size={16} />
-        </Button>
-
-        {/* Percentage (clickable for menu) */}
-        <Button
-          variant="ghost"
-          onClick={() => setIsOpen(!isOpen)}
-          className="px-3 h-full text-sm font-mono text-slate-700 hover:text-slate-900 hover:bg-transparent min-w-[60px]"
-        >
-          {zoomPercentage}%
-        </Button>
-
-        {/* Plus Button */}
-        <Button
-          variant="ghost"
-          size="icon"
-          onClick={zoomIn}
-          className="w-8 h-8 rounded-full hover:bg-slate-50 text-slate-500 hover:text-primary"
-          title="Zoom in (Cmd +)"
-        >
-          <Plus size={16} />
-        </Button>
-
-        {/* Divider */}
-        <Separator orientation="vertical" className="h-5 mx-1" />
-
-        {/* Fit to Screen */}
-        <Button
-          variant="ghost"
-          size="icon"
-          onClick={fitToContent}
-          className="w-8 h-8 rounded-full hover:bg-slate-50 text-slate-500 hover:text-primary"
-          title="Fit to content"
-        >
-          <Maximize size={16} />
-        </Button>
-
-        {/* Auto Layout */}
-        <Button
-          variant="ghost"
-          size="icon"
-          onClick={autoLayout}
-          className="w-8 h-8 rounded-full hover:bg-slate-50 text-slate-500 hover:text-primary"
-          title="Auto-arrange images"
-        >
-          <LayoutGrid size={16} />
-        </Button>
-
-      </div>
+        </PopoverContent>
+      </Popover>
     </div>
   )
 }

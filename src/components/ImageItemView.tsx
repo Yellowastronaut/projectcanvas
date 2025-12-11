@@ -3,6 +3,7 @@ import { Info, Copy, Check } from 'lucide-react'
 import { useStore } from '../store/useStore'
 import type { ImageItem, SnapGuide } from '../store/types'
 import { ImageActionButtons } from './ImageActionButtons'
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover'
 // TODO: Re-enable when edit feature is ready
 // import { ImageEditPanel } from './ImageEditPanel'
 
@@ -578,95 +579,48 @@ export function ImageItemView({ image, gridSize }: Props) {
         </div>
       )}
 
-      {/* Info icon - shows on generated images with metadata */}
+      {/* Info icon with metadata popover - shows on generated images */}
       {image.metadata && (
-        <button
-          ref={infoButtonRef}
-          onClick={(e) => {
-            e.stopPropagation()
-            setShowMetadata(!showMetadata)
-          }}
-          className="absolute flex items-center justify-center bg-[#522CEC] hover:bg-[#4322c5] text-white rounded-full shadow-lg transition-all hover:scale-110 z-10"
-          style={{
-            top: 8 / transform.scale,
-            right: 8 / transform.scale,
-            width: 24 / transform.scale,
-            height: 24 / transform.scale,
-          }}
-        >
-          <Info style={{ width: 14 / transform.scale, height: 14 / transform.scale }} />
-        </button>
-      )}
-
-      {/* TODO: Re-enable Edit/Retry button when feature is ready */}
-      {/* {image.metadata && (
-        <button
-          onClick={(e) => {
-            e.stopPropagation()
-            setShowEditPanel(!showEditPanel)
-            setShowMetadata(false)
-          }}
-          className="absolute flex items-center justify-center bg-[#522CEC] hover:bg-[#4322c5] text-white rounded-full shadow-lg transition-all hover:scale-110 z-10"
-          style={{
-            top: 40 / transform.scale,
-            right: 8 / transform.scale,
-            width: 24 / transform.scale,
-            height: 24 / transform.scale,
-          }}
-          title="Edit this image"
-        >
-          <RefreshCw style={{ width: 14 / transform.scale, height: 14 / transform.scale }} />
-        </button>
-      )} */}
-
-      {/* Metadata popup - positioned relative to image */}
-      {showMetadata && image.metadata && (
-        <>
-          {/* Click outside to close */}
-          <div
-            className="fixed inset-0 z-[9998]"
-            onClick={() => setShowMetadata(false)}
-            style={{ pointerEvents: 'auto' }}
-          />
-          <div
-            className="absolute bg-[#1A1B25]/70 backdrop-blur-xl saturate-150 border border-white/10 rounded-xl shadow-2xl z-[9999] overflow-hidden"
-            style={{
-              left: '100%',
-              top: 0,
-              marginLeft: 12 / transform.scale,
-              width: 280 / transform.scale,
-              transformOrigin: 'top left',
-            }}
+        <Popover open={showMetadata} onOpenChange={setShowMetadata}>
+          <PopoverTrigger asChild>
+            <button
+              ref={infoButtonRef}
+              onClick={(e) => e.stopPropagation()}
+              className="absolute flex items-center justify-center bg-[#522CEC] hover:bg-[#4322c5] text-white rounded-full shadow-lg transition-all hover:scale-110 z-10"
+              style={{
+                top: 8 / transform.scale,
+                right: 8 / transform.scale,
+                width: 24 / transform.scale,
+                height: 24 / transform.scale,
+              }}
+            >
+              <Info style={{ width: 14 / transform.scale, height: 14 / transform.scale }} />
+            </button>
+          </PopoverTrigger>
+          <PopoverContent
+            side="right"
+            align="start"
+            sideOffset={12}
+            className="w-[280px] p-0 bg-[#1A1B25]/95 backdrop-blur-xl saturate-150 border-white/10 shadow-2xl"
             onClick={(e) => e.stopPropagation()}
           >
             {/* Header */}
-            <div
-              className="border-b border-white/10 bg-[#522CEC]/10"
-              style={{
-                padding: `${12 / transform.scale}px ${16 / transform.scale}px`,
-              }}
-            >
-              <div className="flex items-center" style={{ gap: 8 / transform.scale }}>
-                <Info style={{ width: 14 / transform.scale, height: 14 / transform.scale }} className="text-[#522CEC]" />
-                <span
-                  className="font-bold text-white tracking-wide"
-                  style={{ fontSize: 12 / transform.scale }}
-                >
+            <div className="border-b border-white/10 bg-[#522CEC]/10 px-4 py-3">
+              <div className="flex items-center gap-2">
+                <Info size={14} className="text-[#522CEC]" />
+                <span className="text-xs font-bold text-white tracking-wide">
                   GENERATION INFO
                 </span>
               </div>
             </div>
 
             {/* Content */}
-            <div style={{ padding: 16 / transform.scale }}>
+            <div className="p-4">
               {/* Prompt */}
               {image.metadata.prompt && (
-                <div style={{ marginBottom: 12 / transform.scale }}>
-                  <div className="flex items-center justify-between" style={{ marginBottom: 4 / transform.scale }}>
-                    <span
-                      className="font-bold text-slate-500 uppercase tracking-wider"
-                      style={{ fontSize: 10 / transform.scale }}
-                    >
+                <div className="mb-3">
+                  <div className="flex items-center justify-between mb-1">
+                    <span className="text-[10px] font-bold text-slate-500 uppercase tracking-wider">
                       Prompt
                     </span>
                     <button
@@ -676,124 +630,73 @@ export function ImageItemView({ image, gridSize }: Props) {
                         setCopiedPrompt(true)
                         setTimeout(() => setCopiedPrompt(false), 2000)
                       }}
-                      className="flex items-center rounded bg-white/5 hover:bg-white/10 text-slate-400 hover:text-white transition-colors"
-                      style={{
-                        gap: 4 / transform.scale,
-                        padding: `${2 / transform.scale}px ${8 / transform.scale}px`,
-                      }}
+                      className="flex items-center gap-1 px-2 py-0.5 rounded bg-white/5 hover:bg-white/10 text-slate-400 hover:text-white transition-colors"
                     >
                       {copiedPrompt ? (
                         <>
-                          <Check style={{ width: 10 / transform.scale, height: 10 / transform.scale }} className="text-emerald-400" />
-                          <span className="text-emerald-400" style={{ fontSize: 9 / transform.scale }}>Copied</span>
+                          <Check size={10} className="text-emerald-400" />
+                          <span className="text-[9px] text-emerald-400">Copied</span>
                         </>
                       ) : (
                         <>
-                          <Copy style={{ width: 10 / transform.scale, height: 10 / transform.scale }} />
-                          <span style={{ fontSize: 9 / transform.scale }}>Copy</span>
+                          <Copy size={10} />
+                          <span className="text-[9px]">Copy</span>
                         </>
                       )}
                     </button>
                   </div>
-                  <div
-                    className="text-slate-300 leading-relaxed bg-black/20 rounded-lg overflow-y-auto resize-y"
-                    style={{
-                      fontSize: 11 / transform.scale,
-                      padding: 8 / transform.scale,
-                      minHeight: 40 / transform.scale,
-                      maxHeight: 200 / transform.scale,
-                    }}
-                  >
+                  <div className="text-[11px] text-slate-300 leading-relaxed bg-black/20 rounded-lg p-2 max-h-[200px] overflow-y-auto">
                     {image.metadata.prompt}
                   </div>
                 </div>
               )}
 
               {/* Grid of other metadata */}
-              <div
-                className="grid grid-cols-2"
-                style={{ gap: 8 / transform.scale }}
-              >
+              <div className="grid grid-cols-2 gap-2">
                 {image.metadata.model && (
-                  <div
-                    className="bg-black/20 rounded-lg"
-                    style={{ padding: 8 / transform.scale }}
-                  >
-                    <span
-                      className="font-bold text-slate-500 uppercase tracking-wider block"
-                      style={{ fontSize: 9 / transform.scale, marginBottom: 2 / transform.scale }}
-                    >
+                  <div className="bg-black/20 rounded-lg p-2">
+                    <span className="text-[9px] font-bold text-slate-500 uppercase tracking-wider block mb-0.5">
                       Model
                     </span>
-                    <span
-                      className="text-white font-mono"
-                      style={{ fontSize: 11 / transform.scale }}
-                    >
+                    <span className="text-[11px] text-white font-mono">
                       {image.metadata.model}
                     </span>
                   </div>
                 )}
                 {image.metadata.aspectRatio && (
-                  <div
-                    className="bg-black/20 rounded-lg"
-                    style={{ padding: 8 / transform.scale }}
-                  >
-                    <span
-                      className="font-bold text-slate-500 uppercase tracking-wider block"
-                      style={{ fontSize: 9 / transform.scale, marginBottom: 2 / transform.scale }}
-                    >
+                  <div className="bg-black/20 rounded-lg p-2">
+                    <span className="text-[9px] font-bold text-slate-500 uppercase tracking-wider block mb-0.5">
                       Aspect Ratio
                     </span>
-                    <span
-                      className="text-white font-mono"
-                      style={{ fontSize: 11 / transform.scale }}
-                    >
+                    <span className="text-[11px] text-white font-mono">
                       {image.metadata.aspectRatio}
                     </span>
                   </div>
                 )}
                 {image.metadata.resolution && (
-                  <div
-                    className="bg-black/20 rounded-lg"
-                    style={{ padding: 8 / transform.scale }}
-                  >
-                    <span
-                      className="font-bold text-slate-500 uppercase tracking-wider block"
-                      style={{ fontSize: 9 / transform.scale, marginBottom: 2 / transform.scale }}
-                    >
+                  <div className="bg-black/20 rounded-lg p-2">
+                    <span className="text-[9px] font-bold text-slate-500 uppercase tracking-wider block mb-0.5">
                       Resolution
                     </span>
-                    <span
-                      className="text-white font-mono"
-                      style={{ fontSize: 11 / transform.scale }}
-                    >
+                    <span className="text-[11px] text-white font-mono">
                       {image.metadata.resolution}
                     </span>
                   </div>
                 )}
                 {image.metadata.generationTime && (
-                  <div
-                    className="bg-black/20 rounded-lg"
-                    style={{ padding: 8 / transform.scale }}
-                  >
-                    <span
-                      className="font-bold text-slate-500 uppercase tracking-wider block"
-                      style={{ fontSize: 9 / transform.scale, marginBottom: 2 / transform.scale }}
-                    >
+                  <div className="bg-black/20 rounded-lg p-2">
+                    <span className="text-[9px] font-bold text-slate-500 uppercase tracking-wider block mb-0.5">
                       Gen Time
                     </span>
-                    <span
-                      className="text-white font-mono"
-                      style={{ fontSize: 11 / transform.scale }}
-                    >
+                    <span className="text-[11px] text-white font-mono">
                       {image.metadata.generationTime.toFixed(1)}s
                     </span>
                   </div>
                 )}
               </div>
             </div>
-          </div>
-        </>
+          </PopoverContent>
+        </Popover>
       )}
 
       {/* Selection handles */}

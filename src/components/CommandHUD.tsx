@@ -1,11 +1,27 @@
 import { useState, useRef, useEffect } from 'react'
-import { createPortal } from 'react-dom'
 import { Eye, Image as ImageIcon, ArrowRight, Ratio, GripHorizontal, Sparkles, Monitor, Loader2 } from 'lucide-react'
 import { useStore } from '../store/useStore'
 import type { ImageItem } from '../store/types'
 import { submitAIModifier } from '../api/n8n'
 import { Button } from '@/components/ui/button'
 import { Textarea } from '@/components/ui/textarea'
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu'
+import {
+  Popover,
+  PopoverContent,
+} from '@/components/ui/popover'
+import {
+  Command,
+  CommandEmpty,
+  CommandGroup,
+  CommandItem,
+  CommandList,
+} from '@/components/ui/command'
 import { cn } from '@/lib/utils'
 
 const MODELS = [
@@ -48,44 +64,70 @@ const RESOLUTIONS = [
   { id: '4k', name: '4K' },
 ]
 
-interface _ToolSlotProps {
-  icon: React.ReactNode
-  label: string
-  value?: string
-  isActive?: boolean
-  isDashed?: boolean
-  onClick?: () => void
-}
-
-function _ToolSlot({ icon, label, value, isActive, onClick }: Omit<_ToolSlotProps, 'isDashed'>) {
-  return (
-    <button
-      onClick={onClick}
-      className={`
-        flex flex-col items-start justify-center py-1.5 px-3 rounded-lg h-14 transition-all text-left border
-        ${isActive
-          ? 'bg-[#522CEC]/10 border-[#522CEC]/30'
-          : 'bg-white/5 border-transparent hover:bg-white/10 hover:border-white/10'
-        }
-      `}
-    >
-      <div className="flex items-center gap-1.5 mb-0.5">
-        <span className={`${isActive ? 'text-[#522CEC]' : 'text-slate-400'}`}>
-          {icon}
-        </span>
-        <span className="text-[10px] font-bold uppercase text-slate-500">{label}</span>
-      </div>
-      <span className={`text-[10px] font-mono truncate w-full ${isActive ? 'text-white' : 'text-slate-300'}`}>
-        {value || "--"}
-      </span>
-    </button>
-  )
-}
-void _ToolSlot // Reserved for future use
-
 interface ImageAIModifierProps {
   image: ImageItem
   scale: number
+}
+
+// Reusable Parameter Slot with Dropdown
+interface ParameterSlotProps<T extends { id: string; name: string }> {
+  icon: React.ReactNode
+  label: string
+  options: T[]
+  selected: T
+  onSelect: (option: T) => void
+}
+
+function ParameterSlot<T extends { id: string; name: string }>({
+  icon,
+  label,
+  options,
+  selected,
+  onSelect,
+}: ParameterSlotProps<T>) {
+  return (
+    <DropdownMenu>
+      <DropdownMenuTrigger asChild>
+        <button
+          className={cn(
+            "w-full flex flex-col items-start justify-center py-1.5 px-3 rounded-lg h-14 transition-all text-left border",
+            "bg-white/5 border-transparent hover:bg-white/10 hover:border-white/10",
+            "data-[state=open]:bg-primary/10 data-[state=open]:border-primary/30"
+          )}
+        >
+          <div className="flex items-center gap-1.5 mb-0.5">
+            <span className="text-slate-400 data-[state=open]:text-primary">
+              {icon}
+            </span>
+            <span className="text-[10px] font-bold uppercase text-slate-500">{label}</span>
+          </div>
+          <span className="text-[10px] font-mono truncate w-full text-slate-300">
+            {selected.name}
+          </span>
+        </button>
+      </DropdownMenuTrigger>
+      <DropdownMenuContent
+        side="top"
+        align="start"
+        className="bg-[#1A1B25] border-white/10 min-w-[120px]"
+      >
+        {options.map((option) => (
+          <DropdownMenuItem
+            key={option.id}
+            onClick={() => onSelect(option)}
+            className={cn(
+              "text-[11px] font-mono tracking-wide cursor-pointer",
+              selected.id === option.id
+                ? 'bg-primary/20 text-primary font-bold'
+                : 'text-slate-400 hover:bg-white/5 hover:text-white focus:bg-white/5 focus:text-white'
+            )}
+          >
+            {option.name}
+          </DropdownMenuItem>
+        ))}
+      </DropdownMenuContent>
+    </DropdownMenu>
+  )
 }
 
 export function ImageAIModifier({ image, scale }: ImageAIModifierProps) {
@@ -94,40 +136,33 @@ export function ImageAIModifier({ image, scale }: ImageAIModifierProps) {
   const selectedImages = allImages.filter(img => selectedImageIds.includes(img.id))
   const [input, setInput] = useState('')
   const [selectedModel, setSelectedModel] = useState(MODELS[0])
-  const [isModelDropdownOpen, setIsModelDropdownOpen] = useState(false)
   const [isLoading, setIsLoading] = useState(false)
   const [selectedPerspective, setSelectedPerspective] = useState(PERSPECTIVES[0])
-  const [isPerspectiveDropdownOpen, setIsPerspectiveDropdownOpen] = useState(false)
   const [selectedRatio, setSelectedRatio] = useState(RATIOS[8]) // Default 16:9
-  const [isRatioDropdownOpen, setIsRatioDropdownOpen] = useState(false)
   const [selectedStyle, setSelectedStyle] = useState(STYLES[0]) // Default Clean
-  const [isStyleDropdownOpen, setIsStyleDropdownOpen] = useState(false)
   const [selectedResolution, setSelectedResolution] = useState(RESOLUTIONS[1]) // Default 2K
-  const [isResolutionDropdownOpen, setIsResolutionDropdownOpen] = useState(false)
   const [position, setPosition] = useState({ x: 0, y: 0 })
   const [isDragging, setIsDragging] = useState(false)
   const [refImage, setRefImage] = useState<{ src: string; name: string } | null>(null)
   const [showCanvasImagePicker, setShowCanvasImagePicker] = useState(false)
   const [atCursorPosition, setAtCursorPosition] = useState<number | null>(null)
-  const [pickerPosition, setPickerPosition] = useState({ x: 0, y: 0 })
   const dragRef = useRef({ startX: 0, startY: 0, posX: 0, posY: 0 })
   const inputRef = useRef<HTMLTextAreaElement>(null)
   const textareaContainerRef = useRef<HTMLDivElement>(null)
   const fileInputRef = useRef<HTMLInputElement>(null)
-
-  // Update picker position when it opens
-  useEffect(() => {
-    if (showCanvasImagePicker && textareaContainerRef.current) {
-      const rect = textareaContainerRef.current.getBoundingClientRect()
-      setPickerPosition({
-        x: rect.left + 16,
-        y: rect.top - 8, // Position above the textarea
-      })
-    }
-  }, [showCanvasImagePicker])
+  const popoverAnchorRef = useRef<HTMLDivElement>(null)
 
   const { addImage, updateImage, removeImage } = useStore()
   const [error, setError] = useState<string | null>(null)
+
+  // Update popover anchor position when picker opens
+  useEffect(() => {
+    if (showCanvasImagePicker && textareaContainerRef.current && popoverAnchorRef.current) {
+      const rect = textareaContainerRef.current.getBoundingClientRect()
+      popoverAnchorRef.current.style.left = `${rect.left + 16}px`
+      popoverAnchorRef.current.style.top = `${rect.top}px`
+    }
+  }, [showCanvasImagePicker])
 
   const handleSubmit = async () => {
     if (!input.trim() || isLoading) return
@@ -297,6 +332,9 @@ export function ImageAIModifier({ image, scale }: ImageAIModifierProps) {
       }}
       onMouseDown={(e) => e.stopPropagation()}
     >
+      {/* Hidden anchor for Popover positioning */}
+      <div ref={popoverAnchorRef} className="fixed pointer-events-none" style={{ width: 1, height: 1 }} />
+
       {/* CONSOLE CONTAINER - Deep Glass Effect (like context menu) */}
       <div className="
         relative z-50
@@ -332,46 +370,38 @@ export function ImageAIModifier({ image, scale }: ImageAIModifierProps) {
           </div>
 
           {/* Right: Model Chip (Interactive) */}
-          <div className="relative">
-            <button
-              onClick={() => setIsModelDropdownOpen(!isModelDropdownOpen)}
-              className="flex items-center gap-2 px-2 py-0.5 rounded bg-black/40 border border-white/10 hover:border-primary transition-all group"
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <button className="flex items-center gap-2 px-2 py-0.5 rounded bg-black/40 border border-white/10 hover:border-primary transition-all group">
+                <span className={cn(
+                  "w-1.5 h-1.5 rounded-full group-hover:shadow-[0_0_8px_rgba(52,211,153,0.8)] transition-shadow",
+                  isLoading ? 'bg-amber-400 animate-pulse' : 'bg-emerald-400'
+                )}></span>
+                <span className="text-[10px] font-mono text-slate-300 group-hover:text-white">
+                  {selectedModel.name}
+                </span>
+              </button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent
+              align="end"
+              className="bg-[#1A1B25] border-white/10 min-w-[180px]"
             >
-              <span className={cn(
-                "w-1.5 h-1.5 rounded-full group-hover:shadow-[0_0_8px_rgba(52,211,153,0.8)] transition-shadow",
-                isLoading ? 'bg-amber-400 animate-pulse' : 'bg-emerald-400'
-              )}></span>
-              <span className="text-[10px] font-mono text-slate-300 group-hover:text-white">
-                {selectedModel.name}
-              </span>
-            </button>
-
-            {/* Model Dropdown */}
-            {isModelDropdownOpen && (
-              <>
-                <div className="fixed inset-0 z-40" onClick={() => setIsModelDropdownOpen(false)} />
-                <div className="absolute top-full right-0 mt-1 bg-[#1A1B25] border border-white/10 rounded-lg shadow-xl py-1 z-50 min-w-[180px]">
-                  {MODELS.map((model) => (
-                    <button
-                      key={model.id}
-                      onClick={() => {
-                        setSelectedModel(model)
-                        setIsModelDropdownOpen(false)
-                      }}
-                      className={cn(
-                        "w-full text-left px-3 py-2 text-[11px] font-mono tracking-wide transition-colors",
-                        selectedModel.id === model.id
-                          ? 'bg-primary/20 text-primary font-bold'
-                          : 'text-slate-400 hover:bg-white/5 hover:text-white'
-                      )}
-                    >
-                      {model.name}
-                    </button>
-                  ))}
-                </div>
-              </>
-            )}
-          </div>
+              {MODELS.map((model) => (
+                <DropdownMenuItem
+                  key={model.id}
+                  onClick={() => setSelectedModel(model)}
+                  className={cn(
+                    "text-[11px] font-mono tracking-wide cursor-pointer",
+                    selectedModel.id === model.id
+                      ? 'bg-primary/20 text-primary font-bold'
+                      : 'text-slate-400 hover:bg-white/5 hover:text-white focus:bg-white/5 focus:text-white'
+                  )}
+                >
+                  {model.name}
+                </DropdownMenuItem>
+              ))}
+            </DropdownMenuContent>
+          </DropdownMenu>
         </div>
 
         {/* 2. INPUT FIELD (Terminal Style) */}
@@ -404,68 +434,44 @@ export function ImageAIModifier({ image, scale }: ImageAIModifierProps) {
             {isLoading ? <Loader2 size={18} className="animate-spin" /> : <ArrowRight size={18} />}
           </Button>
 
-          {/* Canvas Image Picker (@ mention dropdown) - rendered as portal */}
-          {showCanvasImagePicker && allImages.length > 0 && createPortal(
-            <>
-              <div className="fixed inset-0 z-[9998]" onClick={() => {
-                setShowCanvasImagePicker(false)
-                setAtCursorPosition(null)
-              }} />
-              <div
-                className="fixed bg-[#1A1B25] border border-white/10 rounded-lg shadow-xl z-[9999] min-w-[200px] max-w-[300px] max-h-[200px] overflow-y-auto"
-                style={{
-                  left: pickerPosition.x,
-                  top: pickerPosition.y,
-                  transform: 'translateY(-100%)',
-                  scrollbarWidth: 'thin',
-                  scrollbarColor: '#522CEC30 transparent',
-                }}
-                onWheel={(e) => e.stopPropagation()}
-              >
-                <div className="px-3 py-2 border-b border-white/10 text-[10px] font-bold text-slate-400 uppercase tracking-wider">
-                  Canvas Images
-                </div>
-                {allImages.map((canvasImg) => (
-                  <button
-                    key={canvasImg.id}
-                    onClick={() => selectCanvasImageAsRef(canvasImg)}
-                    className="w-full flex items-center gap-3 px-3 py-2 hover:bg-white/5 transition-colors text-left"
-                  >
-                    <div className="w-8 h-8 rounded overflow-hidden flex-shrink-0 border border-white/10">
-                      <img src={canvasImg.src} alt={canvasImg.name} className="w-full h-full object-cover" />
-                    </div>
-                    <span className="text-[11px] font-mono text-slate-300 truncate">
-                      {canvasImg.name}
-                    </span>
-                  </button>
-                ))}
-              </div>
-            </>,
-            document.body
-          )}
-
-          {/* Show hint when no canvas images */}
-          {showCanvasImagePicker && allImages.length === 0 && createPortal(
-            <>
-              <div className="fixed inset-0 z-[9998]" onClick={() => {
-                setShowCanvasImagePicker(false)
-                setAtCursorPosition(null)
-              }} />
-              <div
-                className="fixed bg-[#1A1B25] border border-white/10 rounded-lg shadow-xl z-[9999] min-w-[200px] p-3"
-                style={{
-                  left: pickerPosition.x,
-                  top: pickerPosition.y,
-                  transform: 'translateY(-100%)',
-                }}
-              >
-                <span className="text-[11px] text-slate-400">
-                  No images on canvas. Upload images first.
-                </span>
-              </div>
-            </>,
-            document.body
-          )}
+          {/* Canvas Image Picker (@ mention) using shadcn Popover + Command */}
+          <Popover open={showCanvasImagePicker} onOpenChange={(open) => {
+            setShowCanvasImagePicker(open)
+            if (!open) setAtCursorPosition(null)
+          }}>
+            <PopoverContent
+              side="top"
+              align="start"
+              className="w-[280px] p-0 bg-[#1A1B25] border-white/10"
+              onWheel={(e) => e.stopPropagation()}
+              onOpenAutoFocus={(e) => e.preventDefault()}
+            >
+              <Command className="bg-transparent">
+                <CommandList className="max-h-[200px]">
+                  <CommandEmpty className="text-[11px] text-slate-400 py-4">
+                    No images on canvas. Upload images first.
+                  </CommandEmpty>
+                  <CommandGroup heading="Canvas Images" className="[&_[cmdk-group-heading]]:text-[10px] [&_[cmdk-group-heading]]:font-bold [&_[cmdk-group-heading]]:text-slate-400 [&_[cmdk-group-heading]]:uppercase [&_[cmdk-group-heading]]:tracking-wider">
+                    {allImages.map((canvasImg) => (
+                      <CommandItem
+                        key={canvasImg.id}
+                        value={canvasImg.name}
+                        onSelect={() => selectCanvasImageAsRef(canvasImg)}
+                        className="flex items-center gap-3 px-3 py-2 cursor-pointer text-slate-300 hover:bg-white/5 data-[selected=true]:bg-white/5"
+                      >
+                        <div className="w-8 h-8 rounded overflow-hidden flex-shrink-0 border border-white/10">
+                          <img src={canvasImg.src} alt={canvasImg.name} className="w-full h-full object-cover" />
+                        </div>
+                        <span className="text-[11px] font-mono truncate">
+                          {canvasImg.name}
+                        </span>
+                      </CommandItem>
+                    ))}
+                  </CommandGroup>
+                </CommandList>
+              </Command>
+            </PopoverContent>
+          </Popover>
         </div>
 
         {/* 3. PARAMETER DECK (The Control Grid) */}
@@ -521,200 +527,40 @@ export function ImageAIModifier({ image, scale }: ImageAIModifierProps) {
             </button>
 
             {/* B. Perspective Slot with Dropdown */}
-            <div className="relative">
-              <button
-                onClick={() => setIsPerspectiveDropdownOpen(!isPerspectiveDropdownOpen)}
-                className={cn(
-                  "w-full flex flex-col items-start justify-center py-1.5 px-3 rounded-lg h-14 transition-all text-left border",
-                  isPerspectiveDropdownOpen
-                    ? 'bg-primary/10 border-primary/30'
-                    : 'bg-white/5 border-transparent hover:bg-white/10 hover:border-white/10'
-                )}
-              >
-                <div className="flex items-center gap-1.5 mb-0.5">
-                  <span className={isPerspectiveDropdownOpen ? 'text-primary' : 'text-slate-400'}>
-                    <Eye size={14} />
-                  </span>
-                  <span className="text-[10px] font-bold uppercase text-slate-500">PERSPECTIVE</span>
-                </div>
-                <span className={cn("text-[10px] font-mono truncate w-full", isPerspectiveDropdownOpen ? 'text-white' : 'text-slate-300')}>
-                  {selectedPerspective.name}
-                </span>
-              </button>
-
-              {/* Perspective Dropdown */}
-              {isPerspectiveDropdownOpen && (
-                <>
-                  <div className="fixed inset-0 z-40" onClick={() => setIsPerspectiveDropdownOpen(false)} />
-                  <div className="absolute bottom-full left-0 mb-1 bg-[#1A1B25] border border-white/10 rounded-lg shadow-xl py-1 z-50 min-w-[140px]">
-                    {PERSPECTIVES.map((perspective) => (
-                      <button
-                        key={perspective.id}
-                        onClick={() => {
-                          setSelectedPerspective(perspective)
-                          setIsPerspectiveDropdownOpen(false)
-                        }}
-                        className={cn(
-                          "w-full text-left px-3 py-2 text-[11px] font-mono tracking-wide transition-colors",
-                          selectedPerspective.id === perspective.id
-                            ? 'bg-primary/20 text-primary font-bold'
-                            : 'text-slate-400 hover:bg-white/5 hover:text-white'
-                        )}
-                      >
-                        {perspective.name}
-                      </button>
-                    ))}
-                  </div>
-                </>
-              )}
-            </div>
+            <ParameterSlot
+              icon={<Eye size={14} />}
+              label="PERSPECTIVE"
+              options={PERSPECTIVES}
+              selected={selectedPerspective}
+              onSelect={setSelectedPerspective}
+            />
 
             {/* C. Aspect Ratio with Dropdown */}
-            <div className="relative">
-              <button
-                onClick={() => setIsRatioDropdownOpen(!isRatioDropdownOpen)}
-                className={cn(
-                  "w-full flex flex-col items-start justify-center py-1.5 px-3 rounded-lg h-14 transition-all text-left border",
-                  isRatioDropdownOpen
-                    ? 'bg-primary/10 border-primary/30'
-                    : 'bg-white/5 border-transparent hover:bg-white/10 hover:border-white/10'
-                )}
-              >
-                <div className="flex items-center gap-1.5 mb-0.5">
-                  <span className={isRatioDropdownOpen ? 'text-primary' : 'text-slate-400'}>
-                    <Ratio size={14} />
-                  </span>
-                  <span className="text-[10px] font-bold uppercase text-slate-500">RATIO</span>
-                </div>
-                <span className={cn("text-[10px] font-mono truncate w-full", isRatioDropdownOpen ? 'text-white' : 'text-slate-300')}>
-                  {selectedRatio.name}
-                </span>
-              </button>
+            <ParameterSlot
+              icon={<Ratio size={14} />}
+              label="RATIO"
+              options={RATIOS}
+              selected={selectedRatio}
+              onSelect={setSelectedRatio}
+            />
 
-              {/* Ratio Dropdown */}
-              {isRatioDropdownOpen && (
-                <>
-                  <div className="fixed inset-0 z-40" onClick={() => setIsRatioDropdownOpen(false)} />
-                  <div className="absolute bottom-full left-0 mb-1 bg-[#1A1B25] border border-white/10 rounded-lg shadow-xl py-1 z-50 min-w-[100px]">
-                    {RATIOS.map((ratio) => (
-                      <button
-                        key={ratio.id}
-                        onClick={() => {
-                          setSelectedRatio(ratio)
-                          setIsRatioDropdownOpen(false)
-                        }}
-                        className={cn(
-                          "w-full text-left px-3 py-2 text-[11px] font-mono tracking-wide transition-colors",
-                          selectedRatio.id === ratio.id
-                            ? 'bg-primary/20 text-primary font-bold'
-                            : 'text-slate-400 hover:bg-white/5 hover:text-white'
-                        )}
-                      >
-                        {ratio.name}
-                      </button>
-                    ))}
-                  </div>
-                </>
-              )}
-            </div>
-
-            {/* C. Style with Dropdown */}
-            <div className="relative">
-              <button
-                onClick={() => setIsStyleDropdownOpen(!isStyleDropdownOpen)}
-                className={cn(
-                  "w-full flex flex-col items-start justify-center py-1.5 px-3 rounded-lg h-14 transition-all text-left border",
-                  isStyleDropdownOpen
-                    ? 'bg-primary/10 border-primary/30'
-                    : 'bg-white/5 border-transparent hover:bg-white/10 hover:border-white/10'
-                )}
-              >
-                <div className="flex items-center gap-1.5 mb-0.5">
-                  <span className={isStyleDropdownOpen ? 'text-primary' : 'text-slate-400'}>
-                    <Sparkles size={14} />
-                  </span>
-                  <span className="text-[10px] font-bold uppercase text-slate-500">STYLING</span>
-                </div>
-                <span className={cn("text-[10px] font-mono truncate w-full", isStyleDropdownOpen ? 'text-white' : 'text-slate-300')}>
-                  {selectedStyle.name}
-                </span>
-              </button>
-
-              {/* Style Dropdown */}
-              {isStyleDropdownOpen && (
-                <>
-                  <div className="fixed inset-0 z-40" onClick={() => setIsStyleDropdownOpen(false)} />
-                  <div className="absolute bottom-full left-0 mb-1 bg-[#1A1B25] border border-white/10 rounded-lg shadow-xl py-1 z-50 min-w-[120px]">
-                    {STYLES.map((style) => (
-                      <button
-                        key={style.id}
-                        onClick={() => {
-                          setSelectedStyle(style)
-                          setIsStyleDropdownOpen(false)
-                        }}
-                        className={cn(
-                          "w-full text-left px-3 py-2 text-[11px] font-mono tracking-wide transition-colors",
-                          selectedStyle.id === style.id
-                            ? 'bg-primary/20 text-primary font-bold'
-                            : 'text-slate-400 hover:bg-white/5 hover:text-white'
-                        )}
-                      >
-                        {style.name}
-                      </button>
-                    ))}
-                  </div>
-                </>
-              )}
-            </div>
+            {/* D. Style with Dropdown */}
+            <ParameterSlot
+              icon={<Sparkles size={14} />}
+              label="STYLING"
+              options={STYLES}
+              selected={selectedStyle}
+              onSelect={setSelectedStyle}
+            />
 
             {/* E. Resolution with Dropdown */}
-            <div className="relative">
-              <button
-                onClick={() => setIsResolutionDropdownOpen(!isResolutionDropdownOpen)}
-                className={cn(
-                  "w-full flex flex-col items-start justify-center py-1.5 px-3 rounded-lg h-14 transition-all text-left border",
-                  isResolutionDropdownOpen
-                    ? 'bg-primary/10 border-primary/30'
-                    : 'bg-white/5 border-transparent hover:bg-white/10 hover:border-white/10'
-                )}
-              >
-                <div className="flex items-center gap-1.5 mb-0.5">
-                  <span className={isResolutionDropdownOpen ? 'text-primary' : 'text-slate-400'}>
-                    <Monitor size={14} />
-                  </span>
-                  <span className="text-[10px] font-bold uppercase text-slate-500">RES</span>
-                </div>
-                <span className={cn("text-[10px] font-mono truncate w-full", isResolutionDropdownOpen ? 'text-white' : 'text-slate-300')}>
-                  {selectedResolution.name}
-                </span>
-              </button>
-
-              {/* Resolution Dropdown */}
-              {isResolutionDropdownOpen && (
-                <>
-                  <div className="fixed inset-0 z-40" onClick={() => setIsResolutionDropdownOpen(false)} />
-                  <div className="absolute bottom-full left-0 mb-1 bg-[#1A1B25] border border-white/10 rounded-lg shadow-xl py-1 z-50 min-w-[80px]">
-                    {RESOLUTIONS.map((resolution) => (
-                      <button
-                        key={resolution.id}
-                        onClick={() => {
-                          setSelectedResolution(resolution)
-                          setIsResolutionDropdownOpen(false)
-                        }}
-                        className={cn(
-                          "w-full text-left px-3 py-2 text-[11px] font-mono tracking-wide transition-colors",
-                          selectedResolution.id === resolution.id
-                            ? 'bg-primary/20 text-primary font-bold'
-                            : 'text-slate-400 hover:bg-white/5 hover:text-white'
-                        )}
-                      >
-                        {resolution.name}
-                      </button>
-                    ))}
-                  </div>
-                </>
-              )}
-            </div>
+            <ParameterSlot
+              icon={<Monitor size={14} />}
+              label="RES"
+              options={RESOLUTIONS}
+              selected={selectedResolution}
+              onSelect={setSelectedResolution}
+            />
 
           </div>
         </div>
