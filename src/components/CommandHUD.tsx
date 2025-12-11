@@ -4,6 +4,9 @@ import { Eye, Image as ImageIcon, ArrowRight, Ratio, GripHorizontal, Sparkles, M
 import { useStore } from '../store/useStore'
 import type { ImageItem } from '../store/types'
 import { submitAIModifier } from '../api/n8n'
+import { Button } from '@/components/ui/button'
+import { Textarea } from '@/components/ui/textarea'
+import { cn } from '@/lib/utils'
 
 const MODELS = [
   { id: 'nano-banana-pro', name: 'NANO BANANA PRO' },
@@ -332,9 +335,12 @@ export function ImageAIModifier({ image, scale }: ImageAIModifierProps) {
           <div className="relative">
             <button
               onClick={() => setIsModelDropdownOpen(!isModelDropdownOpen)}
-              className="flex items-center gap-2 px-2 py-0.5 rounded bg-black/40 border border-white/10 hover:border-[#522CEC] transition-all group"
+              className="flex items-center gap-2 px-2 py-0.5 rounded bg-black/40 border border-white/10 hover:border-primary transition-all group"
             >
-              <span className={`w-1.5 h-1.5 rounded-full ${isLoading ? 'bg-amber-400 animate-pulse' : 'bg-emerald-400'} group-hover:shadow-[0_0_8px_rgba(52,211,153,0.8)] transition-shadow`}></span>
+              <span className={cn(
+                "w-1.5 h-1.5 rounded-full group-hover:shadow-[0_0_8px_rgba(52,211,153,0.8)] transition-shadow",
+                isLoading ? 'bg-amber-400 animate-pulse' : 'bg-emerald-400'
+              )}></span>
               <span className="text-[10px] font-mono text-slate-300 group-hover:text-white">
                 {selectedModel.name}
               </span>
@@ -352,11 +358,12 @@ export function ImageAIModifier({ image, scale }: ImageAIModifierProps) {
                         setSelectedModel(model)
                         setIsModelDropdownOpen(false)
                       }}
-                      className={`w-full text-left px-3 py-2 text-[11px] font-mono tracking-wide transition-colors ${
+                      className={cn(
+                        "w-full text-left px-3 py-2 text-[11px] font-mono tracking-wide transition-colors",
                         selectedModel.id === model.id
-                          ? 'bg-[#522CEC]/20 text-[#522CEC] font-bold'
+                          ? 'bg-primary/20 text-primary font-bold'
                           : 'text-slate-400 hover:bg-white/5 hover:text-white'
-                      }`}
+                      )}
                     >
                       {model.name}
                     </button>
@@ -369,16 +376,12 @@ export function ImageAIModifier({ image, scale }: ImageAIModifierProps) {
 
         {/* 2. INPUT FIELD (Terminal Style) */}
         <div ref={textareaContainerRef} className="relative group">
-          <textarea
+          <Textarea
             ref={inputRef}
             value={input}
             onChange={handleInputChange}
             onKeyDown={handleKeyDown}
-            className="
-              w-full bg-transparent text-white text-sm p-4 pr-14 h-28
-              resize-none outline-none placeholder-slate-400
-              focus:bg-white/[0.02] transition-colors
-            "
+            className="w-full bg-transparent text-white text-sm p-4 pr-14 h-28 resize-none border-none shadow-none focus-visible:ring-0 placeholder-slate-400 focus:bg-white/[0.02] transition-colors"
             placeholder="Add dramatic lighting, change background to mars..."
             disabled={isLoading}
             style={{ color: 'white' }}
@@ -392,13 +395,14 @@ export function ImageAIModifier({ image, scale }: ImageAIModifierProps) {
           )}
 
           {/* Action Button (Floating bottom right of text area) */}
-          <button
+          <Button
             onClick={handleSubmit}
             disabled={!input.trim() || isLoading}
-            className="absolute bottom-3 right-3 p-2 bg-[#522CEC] hover:bg-[#4322c5] text-white rounded-lg shadow-lg shadow-indigo-500/20 transition-all hover:scale-105 active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100"
+            size="icon"
+            className="absolute bottom-3 right-3 p-2 bg-primary hover:bg-primary/90 text-white rounded-lg shadow-lg shadow-primary/20 transition-all hover:scale-105 active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100"
           >
             {isLoading ? <Loader2 size={18} className="animate-spin" /> : <ArrowRight size={18} />}
-          </button>
+          </Button>
 
           {/* Canvas Image Picker (@ mention dropdown) - rendered as portal */}
           {showCanvasImagePicker && allImages.length > 0 && createPortal(
@@ -471,11 +475,12 @@ export function ImageAIModifier({ image, scale }: ImageAIModifierProps) {
             {/* A. Ref Image (Special styling) */}
             <button
               onClick={() => fileInputRef.current?.click()}
-              className={`flex flex-col items-start justify-center py-1.5 px-3 rounded-lg transition-all text-left relative overflow-hidden h-14 ${
+              className={cn(
+                "flex flex-col items-start justify-center py-1.5 px-3 rounded-lg transition-all text-left relative overflow-hidden h-14",
                 refImage
-                  ? 'bg-[#522CEC]/10 border border-[#522CEC]/30'
+                  ? 'bg-primary/10 border border-primary/30'
                   : 'bg-white/5 hover:bg-white/10 border border-dashed border-slate-600 hover:border-slate-400'
-              }`}
+              )}
             >
               {refImage ? (
                 <>
@@ -495,7 +500,7 @@ export function ImageAIModifier({ image, scale }: ImageAIModifierProps) {
                       </button>
                     </div>
                     <div className="flex-1 min-w-0">
-                      <span className="text-[10px] font-bold text-[#522CEC] block">REF</span>
+                      <span className="text-[10px] font-bold text-primary block">REF</span>
                       <span className="text-[9px] font-mono text-slate-300 truncate block">
                         {refImage.name.length > 10 ? refImage.name.slice(0, 10) + '...' : refImage.name}
                       </span>
@@ -519,21 +524,20 @@ export function ImageAIModifier({ image, scale }: ImageAIModifierProps) {
             <div className="relative">
               <button
                 onClick={() => setIsPerspectiveDropdownOpen(!isPerspectiveDropdownOpen)}
-                className={`
-                  w-full flex flex-col items-start justify-center py-1.5 px-3 rounded-lg h-14 transition-all text-left border
-                  ${isPerspectiveDropdownOpen
-                    ? 'bg-[#522CEC]/10 border-[#522CEC]/30'
+                className={cn(
+                  "w-full flex flex-col items-start justify-center py-1.5 px-3 rounded-lg h-14 transition-all text-left border",
+                  isPerspectiveDropdownOpen
+                    ? 'bg-primary/10 border-primary/30'
                     : 'bg-white/5 border-transparent hover:bg-white/10 hover:border-white/10'
-                  }
-                `}
+                )}
               >
                 <div className="flex items-center gap-1.5 mb-0.5">
-                  <span className={isPerspectiveDropdownOpen ? 'text-[#522CEC]' : 'text-slate-400'}>
+                  <span className={isPerspectiveDropdownOpen ? 'text-primary' : 'text-slate-400'}>
                     <Eye size={14} />
                   </span>
                   <span className="text-[10px] font-bold uppercase text-slate-500">PERSPECTIVE</span>
                 </div>
-                <span className={`text-[10px] font-mono truncate w-full ${isPerspectiveDropdownOpen ? 'text-white' : 'text-slate-300'}`}>
+                <span className={cn("text-[10px] font-mono truncate w-full", isPerspectiveDropdownOpen ? 'text-white' : 'text-slate-300')}>
                   {selectedPerspective.name}
                 </span>
               </button>
@@ -550,11 +554,12 @@ export function ImageAIModifier({ image, scale }: ImageAIModifierProps) {
                           setSelectedPerspective(perspective)
                           setIsPerspectiveDropdownOpen(false)
                         }}
-                        className={`w-full text-left px-3 py-2 text-[11px] font-mono tracking-wide transition-colors ${
+                        className={cn(
+                          "w-full text-left px-3 py-2 text-[11px] font-mono tracking-wide transition-colors",
                           selectedPerspective.id === perspective.id
-                            ? 'bg-[#522CEC]/20 text-[#522CEC] font-bold'
+                            ? 'bg-primary/20 text-primary font-bold'
                             : 'text-slate-400 hover:bg-white/5 hover:text-white'
-                        }`}
+                        )}
                       >
                         {perspective.name}
                       </button>
@@ -568,19 +573,20 @@ export function ImageAIModifier({ image, scale }: ImageAIModifierProps) {
             <div className="relative">
               <button
                 onClick={() => setIsRatioDropdownOpen(!isRatioDropdownOpen)}
-                className={`w-full flex flex-col items-start justify-center py-1.5 px-3 rounded-lg h-14 transition-all text-left border ${
+                className={cn(
+                  "w-full flex flex-col items-start justify-center py-1.5 px-3 rounded-lg h-14 transition-all text-left border",
                   isRatioDropdownOpen
-                    ? 'bg-[#522CEC]/10 border-[#522CEC]/30'
+                    ? 'bg-primary/10 border-primary/30'
                     : 'bg-white/5 border-transparent hover:bg-white/10 hover:border-white/10'
-                }`}
+                )}
               >
                 <div className="flex items-center gap-1.5 mb-0.5">
-                  <span className={isRatioDropdownOpen ? 'text-[#522CEC]' : 'text-slate-400'}>
+                  <span className={isRatioDropdownOpen ? 'text-primary' : 'text-slate-400'}>
                     <Ratio size={14} />
                   </span>
                   <span className="text-[10px] font-bold uppercase text-slate-500">RATIO</span>
                 </div>
-                <span className={`text-[10px] font-mono truncate w-full ${isRatioDropdownOpen ? 'text-white' : 'text-slate-300'}`}>
+                <span className={cn("text-[10px] font-mono truncate w-full", isRatioDropdownOpen ? 'text-white' : 'text-slate-300')}>
                   {selectedRatio.name}
                 </span>
               </button>
@@ -597,11 +603,12 @@ export function ImageAIModifier({ image, scale }: ImageAIModifierProps) {
                           setSelectedRatio(ratio)
                           setIsRatioDropdownOpen(false)
                         }}
-                        className={`w-full text-left px-3 py-2 text-[11px] font-mono tracking-wide transition-colors ${
+                        className={cn(
+                          "w-full text-left px-3 py-2 text-[11px] font-mono tracking-wide transition-colors",
                           selectedRatio.id === ratio.id
-                            ? 'bg-[#522CEC]/20 text-[#522CEC] font-bold'
+                            ? 'bg-primary/20 text-primary font-bold'
                             : 'text-slate-400 hover:bg-white/5 hover:text-white'
-                        }`}
+                        )}
                       >
                         {ratio.name}
                       </button>
@@ -615,19 +622,20 @@ export function ImageAIModifier({ image, scale }: ImageAIModifierProps) {
             <div className="relative">
               <button
                 onClick={() => setIsStyleDropdownOpen(!isStyleDropdownOpen)}
-                className={`w-full flex flex-col items-start justify-center py-1.5 px-3 rounded-lg h-14 transition-all text-left border ${
+                className={cn(
+                  "w-full flex flex-col items-start justify-center py-1.5 px-3 rounded-lg h-14 transition-all text-left border",
                   isStyleDropdownOpen
-                    ? 'bg-[#522CEC]/10 border-[#522CEC]/30'
+                    ? 'bg-primary/10 border-primary/30'
                     : 'bg-white/5 border-transparent hover:bg-white/10 hover:border-white/10'
-                }`}
+                )}
               >
                 <div className="flex items-center gap-1.5 mb-0.5">
-                  <span className={isStyleDropdownOpen ? 'text-[#522CEC]' : 'text-slate-400'}>
+                  <span className={isStyleDropdownOpen ? 'text-primary' : 'text-slate-400'}>
                     <Sparkles size={14} />
                   </span>
                   <span className="text-[10px] font-bold uppercase text-slate-500">STYLING</span>
                 </div>
-                <span className={`text-[10px] font-mono truncate w-full ${isStyleDropdownOpen ? 'text-white' : 'text-slate-300'}`}>
+                <span className={cn("text-[10px] font-mono truncate w-full", isStyleDropdownOpen ? 'text-white' : 'text-slate-300')}>
                   {selectedStyle.name}
                 </span>
               </button>
@@ -644,11 +652,12 @@ export function ImageAIModifier({ image, scale }: ImageAIModifierProps) {
                           setSelectedStyle(style)
                           setIsStyleDropdownOpen(false)
                         }}
-                        className={`w-full text-left px-3 py-2 text-[11px] font-mono tracking-wide transition-colors ${
+                        className={cn(
+                          "w-full text-left px-3 py-2 text-[11px] font-mono tracking-wide transition-colors",
                           selectedStyle.id === style.id
-                            ? 'bg-[#522CEC]/20 text-[#522CEC] font-bold'
+                            ? 'bg-primary/20 text-primary font-bold'
                             : 'text-slate-400 hover:bg-white/5 hover:text-white'
-                        }`}
+                        )}
                       >
                         {style.name}
                       </button>
@@ -662,19 +671,20 @@ export function ImageAIModifier({ image, scale }: ImageAIModifierProps) {
             <div className="relative">
               <button
                 onClick={() => setIsResolutionDropdownOpen(!isResolutionDropdownOpen)}
-                className={`w-full flex flex-col items-start justify-center py-1.5 px-3 rounded-lg h-14 transition-all text-left border ${
+                className={cn(
+                  "w-full flex flex-col items-start justify-center py-1.5 px-3 rounded-lg h-14 transition-all text-left border",
                   isResolutionDropdownOpen
-                    ? 'bg-[#522CEC]/10 border-[#522CEC]/30'
+                    ? 'bg-primary/10 border-primary/30'
                     : 'bg-white/5 border-transparent hover:bg-white/10 hover:border-white/10'
-                }`}
+                )}
               >
                 <div className="flex items-center gap-1.5 mb-0.5">
-                  <span className={isResolutionDropdownOpen ? 'text-[#522CEC]' : 'text-slate-400'}>
+                  <span className={isResolutionDropdownOpen ? 'text-primary' : 'text-slate-400'}>
                     <Monitor size={14} />
                   </span>
                   <span className="text-[10px] font-bold uppercase text-slate-500">RES</span>
                 </div>
-                <span className={`text-[10px] font-mono truncate w-full ${isResolutionDropdownOpen ? 'text-white' : 'text-slate-300'}`}>
+                <span className={cn("text-[10px] font-mono truncate w-full", isResolutionDropdownOpen ? 'text-white' : 'text-slate-300')}>
                   {selectedResolution.name}
                 </span>
               </button>
@@ -691,11 +701,12 @@ export function ImageAIModifier({ image, scale }: ImageAIModifierProps) {
                           setSelectedResolution(resolution)
                           setIsResolutionDropdownOpen(false)
                         }}
-                        className={`w-full text-left px-3 py-2 text-[11px] font-mono tracking-wide transition-colors ${
+                        className={cn(
+                          "w-full text-left px-3 py-2 text-[11px] font-mono tracking-wide transition-colors",
                           selectedResolution.id === resolution.id
-                            ? 'bg-[#522CEC]/20 text-[#522CEC] font-bold'
+                            ? 'bg-primary/20 text-primary font-bold'
                             : 'text-slate-400 hover:bg-white/5 hover:text-white'
-                        }`}
+                        )}
                       >
                         {resolution.name}
                       </button>

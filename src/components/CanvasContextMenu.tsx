@@ -1,5 +1,7 @@
 import { useState } from 'react'
 import { Search, RotateCcw, Maximize2, ZoomIn, Grid3X3, Upload, Type } from 'lucide-react'
+import { Input } from '@/components/ui/input'
+import { cn } from '@/lib/utils'
 
 interface MenuItemProps {
   icon: React.ReactNode
@@ -13,17 +15,19 @@ function MenuItem({ icon, label, shortcut, active, onClick }: MenuItemProps) {
   return (
     <button
       onClick={onClick}
-      className={`
-        w-full flex items-center justify-between px-3 py-2 rounded-lg text-sm transition-all group
-        ${active
+      className={cn(
+        "w-full flex items-center justify-between px-3 py-2 rounded-lg text-sm transition-all group",
+        active
           ? 'bg-white/10 text-white shadow-sm'
           : 'hover:bg-white/5 text-slate-400 hover:text-white'
-        }
-      `}
+      )}
     >
       {/* Left: Icon & Text */}
       <div className="flex items-center gap-3">
-        <span className={`${active ? 'text-[#522CEC]' : 'text-slate-500 group-hover:text-slate-300'} transition-colors`}>
+        <span className={cn(
+          "transition-colors",
+          active ? 'text-primary' : 'text-slate-500 group-hover:text-slate-300'
+        )}>
           {icon}
         </span>
         <span className="font-medium tracking-wide">{label}</span>
@@ -34,14 +38,12 @@ function MenuItem({ icon, label, shortcut, active, onClick }: MenuItemProps) {
         {shortcut.map((key, i) => (
           <span
             key={i}
-            className={`
-              min-w-[20px] h-5 flex items-center justify-center
-              text-[10px] font-mono rounded-[4px] border px-1
-              ${active
+            className={cn(
+              "min-w-[20px] h-5 flex items-center justify-center text-[10px] font-mono rounded-[4px] border px-1",
+              active
                 ? 'bg-black/20 border-white/20 text-slate-300'
                 : 'bg-[#2A2B35] border-white/10 text-slate-500'
-              }
-            `}
+            )}
           >
             {key}
           </span>
@@ -88,12 +90,12 @@ export function CanvasContextMenu({ x, y, onClose, onAction }: CanvasContextMenu
           {/* 1. SEARCH BAR */}
           <div className="flex items-center px-3 py-3 border-b border-white/5 bg-transparent">
             <Search className="w-4 h-4 text-slate-500 mr-2" />
-            <input
+            <Input
               type="text"
               placeholder="Search action..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="bg-transparent border-none outline-none text-sm text-white placeholder-slate-400 w-full"
+              className="bg-transparent border-none shadow-none focus-visible:ring-0 text-sm text-white placeholder-slate-400 h-auto p-0"
               autoFocus
             />
           </div>

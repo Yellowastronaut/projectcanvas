@@ -4,17 +4,17 @@ import type { ImageItem } from '../store/types'
 import { ImageToolMenu } from './ImageToolMenu'
 import { ImageAIModifier } from './CommandHUD'
 import { useStore } from '../store/useStore'
+import { Button } from '@/components/ui/button'
+import { cn } from '@/lib/utils'
 
 interface Props {
   image: ImageItem
   scale: number
 }
 
-// AI Modifier height (approx): status bar + textarea + parameter deck
 const AI_MODIFIER_HEIGHT = 280
-// Tool menu height (approx)
 const TOOL_MENU_HEIGHT = 60
-const PADDING = 80 // Extra padding around the content
+const PADDING = 80
 
 export function ImageActionButtons({ image, scale }: Props) {
   const [activePanel, setActivePanel] = useState<'none' | 'tools' | 'ai'>('none')
@@ -28,24 +28,18 @@ export function ImageActionButtons({ image, scale }: Props) {
 
     setActivePanel('tools')
 
-    // Calculate the total height needed: tool menu + image + buttons
     const buttonsHeight = 50
     const totalHeight = TOOL_MENU_HEIGHT + image.height + buttonsHeight + PADDING * 2
     const totalWidth = image.width + PADDING * 2
 
-    // Get viewport dimensions (minus chat panel)
     const viewportWidth = window.innerWidth - 400
     const viewportHeight = window.innerHeight
 
-    // Calculate scale needed to fit everything
     const scaleX = viewportWidth / totalWidth
     const scaleY = viewportHeight / totalHeight
-    const newScale = Math.min(scaleX, scaleY, 1) // Don't zoom in, only out
+    const newScale = Math.min(scaleX, scaleY, 1)
 
-    // Only adjust if current view doesn't fit
     if (newScale < transform.scale) {
-      // Center the tool menu + image in the viewport
-      // Tool menu is above the image, so offset the center upward
       const contentCenterX = image.x + image.width / 2
       const contentCenterY = image.y - TOOL_MENU_HEIGHT / 2 + image.height / 2
 
@@ -64,23 +58,18 @@ export function ImageActionButtons({ image, scale }: Props) {
 
     setActivePanel('ai')
 
-    // Calculate the total height needed: image + buttons + AI modifier
     const buttonsHeight = 50
     const totalHeight = image.height + buttonsHeight + AI_MODIFIER_HEIGHT + PADDING * 2
-    const totalWidth = Math.max(image.width, 650) + PADDING * 2 // AI modifier is ~650px wide
+    const totalWidth = Math.max(image.width, 650) + PADDING * 2
 
-    // Get viewport dimensions (minus chat panel)
     const viewportWidth = window.innerWidth - 400
     const viewportHeight = window.innerHeight
 
-    // Calculate scale needed to fit everything
     const scaleX = viewportWidth / totalWidth
     const scaleY = viewportHeight / totalHeight
-    const newScale = Math.min(scaleX, scaleY, 1) // Don't zoom in, only out
+    const newScale = Math.min(scaleX, scaleY, 1)
 
-    // Only adjust if current view doesn't fit
     if (newScale < transform.scale) {
-      // Center the image + modifier in the viewport
       const contentCenterX = image.x + image.width / 2
       const contentCenterY = image.y + (image.height + buttonsHeight + AI_MODIFIER_HEIGHT) / 2
 
@@ -93,7 +82,7 @@ export function ImageActionButtons({ image, scale }: Props) {
 
   return (
     <>
-      {/* Action Buttons - centered below image */}
+      {/* Action Buttons */}
       <div
         className="absolute left-1/2 z-40"
         style={{
@@ -104,46 +93,40 @@ export function ImageActionButtons({ image, scale }: Props) {
         onMouseDown={(e) => e.stopPropagation()}
       >
         <div className="flex items-center gap-2">
-          {/* Tools Button */}
-          <button
+          <Button
+            variant="outline"
             onClick={toggleTools}
-            className={`
-              flex items-center gap-2 px-4 py-2.5 rounded-xl font-medium text-sm
-              transition-all duration-200 shadow-lg
-              ${activePanel === 'tools'
-                ? 'bg-[#1A1B25] text-white border border-white/20'
-                : 'bg-white/90 backdrop-blur-sm text-slate-700 hover:bg-white border border-slate-200 hover:border-slate-300'
-              }
-            `}
+            className={cn(
+              "flex items-center gap-2 px-4 py-2.5 rounded-xl font-medium text-sm shadow-lg transition-all duration-200",
+              activePanel === 'tools'
+                ? 'bg-[#1A1B25] text-white border-white/20 hover:bg-[#1A1B25] hover:text-white'
+                : 'bg-white/90 backdrop-blur-sm text-slate-700 hover:bg-white border-slate-200 hover:border-slate-300'
+            )}
           >
             <Wrench size={16} />
             <span>Tools</span>
-          </button>
+          </Button>
 
-          {/* AI Modifier Button */}
-          <button
+          <Button
+            variant="outline"
             onClick={toggleAI}
-            className={`
-              flex items-center gap-2 px-4 py-2.5 rounded-xl font-medium text-sm
-              transition-all duration-200 shadow-lg
-              ${activePanel === 'ai'
-                ? 'bg-[#522CEC] text-white border border-[#522CEC]'
-                : 'bg-white/90 backdrop-blur-sm text-slate-700 hover:bg-white border border-slate-200 hover:border-[#522CEC]/50 hover:text-[#522CEC]'
-              }
-            `}
+            className={cn(
+              "flex items-center gap-2 px-4 py-2.5 rounded-xl font-medium text-sm shadow-lg transition-all duration-200",
+              activePanel === 'ai'
+                ? 'bg-primary text-white border-primary hover:bg-primary hover:text-white'
+                : 'bg-white/90 backdrop-blur-sm text-slate-700 hover:bg-white border-slate-200 hover:border-primary/50 hover:text-primary'
+            )}
           >
             <Sparkles size={16} />
             <span>AI Modifier</span>
-          </button>
+          </Button>
         </div>
       </div>
 
-      {/* Tools Panel - above image */}
       {activePanel === 'tools' && (
         <ImageToolMenu image={image} scale={scale} />
       )}
 
-      {/* AI Modifier Panel - below buttons */}
       {activePanel === 'ai' && (
         <ImageAIModifier image={image} scale={scale} />
       )}

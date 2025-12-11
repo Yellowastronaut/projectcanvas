@@ -1,6 +1,9 @@
 import { useState, useRef, useEffect } from 'react'
 import { Minus, Plus, Maximize, LayoutGrid } from 'lucide-react'
 import { useStore } from '../store/useStore'
+import { Button } from '@/components/ui/button'
+import { Separator } from '@/components/ui/separator'
+import { cn } from '@/lib/utils'
 
 const MIN_SCALE = 0.1
 const MAX_SCALE = 5
@@ -12,17 +15,18 @@ interface MenuItemProps {
 }
 
 const MenuItem = ({ label, shortcut, onClick }: MenuItemProps) => (
-  <button
+  <Button
+    variant="ghost"
     onClick={onClick}
-    className="w-full text-left px-5 py-2 hover:bg-slate-50 hover:text-[#522CEC] flex justify-between items-center group transition-colors"
+    className="w-full justify-between px-5 py-2 h-auto hover:bg-slate-50 hover:text-primary"
   >
-    <span className="text-sm text-slate-700 group-hover:text-[#522CEC]">{label}</span>
+    <span className="text-sm text-slate-700 group-hover:text-primary">{label}</span>
     {shortcut && (
-      <span className="text-xs font-mono text-slate-400 group-hover:text-indigo-300 flex items-center gap-1">
+      <span className="text-xs font-mono text-slate-400 group-hover:text-primary/70 flex items-center gap-1">
         {shortcut}
       </span>
     )}
-  </button>
+  </Button>
 )
 
 export function ZoomControls() {
@@ -235,7 +239,7 @@ export function ZoomControls() {
           </div>
 
           {/* Divider */}
-          <div className="h-px bg-slate-100 my-2 mx-4"></div>
+          <Separator className="my-2 mx-4" />
 
           {/* Presets */}
           <div className="flex flex-col">
@@ -250,51 +254,60 @@ export function ZoomControls() {
       <div className="bg-white border border-slate-200 shadow-lg shadow-slate-200/50 rounded-full h-10 flex items-center px-1">
 
         {/* Minus Button */}
-        <button
+        <Button
+          variant="ghost"
+          size="icon"
           onClick={zoomOut}
-          className="w-8 h-8 flex items-center justify-center rounded-full hover:bg-slate-50 text-slate-500 hover:text-[#522CEC] transition-colors"
+          className="w-8 h-8 rounded-full hover:bg-slate-50 text-slate-500 hover:text-primary"
           title="Zoom out (Cmd -)"
         >
           <Minus size={16} />
-        </button>
+        </Button>
 
         {/* Percentage (clickable for menu) */}
-        <button
+        <Button
+          variant="ghost"
           onClick={() => setIsOpen(!isOpen)}
-          className="px-3 h-full flex items-center justify-center text-sm font-mono text-slate-700 hover:text-slate-900 min-w-[60px]"
+          className="px-3 h-full text-sm font-mono text-slate-700 hover:text-slate-900 hover:bg-transparent min-w-[60px]"
         >
           {zoomPercentage}%
-        </button>
+        </Button>
 
         {/* Plus Button */}
-        <button
+        <Button
+          variant="ghost"
+          size="icon"
           onClick={zoomIn}
-          className="w-8 h-8 flex items-center justify-center rounded-full hover:bg-slate-50 text-slate-500 hover:text-[#522CEC] transition-colors"
+          className="w-8 h-8 rounded-full hover:bg-slate-50 text-slate-500 hover:text-primary"
           title="Zoom in (Cmd +)"
         >
           <Plus size={16} />
-        </button>
+        </Button>
 
         {/* Divider */}
-        <div className="w-px h-5 bg-slate-200 mx-1"></div>
+        <Separator orientation="vertical" className="h-5 mx-1" />
 
         {/* Fit to Screen */}
-        <button
+        <Button
+          variant="ghost"
+          size="icon"
           onClick={fitToContent}
-          className="w-8 h-8 flex items-center justify-center rounded-full hover:bg-slate-50 text-slate-500 hover:text-[#522CEC] transition-colors"
+          className="w-8 h-8 rounded-full hover:bg-slate-50 text-slate-500 hover:text-primary"
           title="Fit to content"
         >
           <Maximize size={16} />
-        </button>
+        </Button>
 
         {/* Auto Layout */}
-        <button
+        <Button
+          variant="ghost"
+          size="icon"
           onClick={autoLayout}
-          className="w-8 h-8 flex items-center justify-center rounded-full hover:bg-slate-50 text-slate-500 hover:text-[#522CEC] transition-colors"
+          className="w-8 h-8 rounded-full hover:bg-slate-50 text-slate-500 hover:text-primary"
           title="Auto-arrange images"
         >
           <LayoutGrid size={16} />
-        </button>
+        </Button>
 
       </div>
     </div>

@@ -1,6 +1,7 @@
 import { Loader2, Plus } from 'lucide-react'
 import type { Message } from '../store/types'
 import { useStore } from '../store/useStore'
+import { cn } from '@/lib/utils'
 
 interface Props {
   message: Message
@@ -39,13 +40,14 @@ export function ChatMessage({ message }: Props) {
   }
 
   return (
-    <div className={`flex ${isUser ? 'justify-end' : 'justify-start'}`}>
+    <div className={cn("flex", isUser ? 'justify-end' : 'justify-start')}>
       <div
-        className={`max-w-[85%] rounded-2xl px-4 py-2.5 ${
+        className={cn(
+          "max-w-[85%] rounded-2xl px-4 py-2.5",
           isUser
             ? 'bg-text text-white rounded-br-md'
             : 'bg-muted-light text-text rounded-bl-md'
-        }`}
+        )}
       >
         {/* Text content */}
         <p className="text-sm whitespace-pre-wrap">{message.content}</p>
@@ -80,17 +82,18 @@ export function ChatMessage({ message }: Props) {
 
         {/* Image thumbnails (for uploaded images) */}
         {message.images && message.images.length > 0 && (
-          <div className={`mt-2 ${isUser ? 'flex gap-2' : 'grid grid-cols-2 gap-2'}`}>
+          <div className={cn("mt-2", isUser ? 'flex gap-2' : 'grid grid-cols-2 gap-2')}>
             {message.images.map((src, index) => (
               <div key={index} className="relative group">
                 <img
                   src={src}
                   alt={`Image ${index + 1}`}
-                  className={`object-cover rounded-lg ${
+                  className={cn(
+                    "object-cover rounded-lg",
                     isUser
                       ? 'w-12 h-12 border border-white/20'
                       : 'w-full aspect-square cursor-pointer hover:opacity-90 transition-opacity'
-                  }`}
+                  )}
                 />
                 {!isUser && (
                   <div className="absolute inset-0 bg-text/40 opacity-0 group-hover:opacity-100 transition-opacity rounded-lg flex items-center justify-center">
@@ -106,9 +109,10 @@ export function ChatMessage({ message }: Props) {
 
         {/* Timestamp */}
         <p
-          className={`text-[10px] mt-1 ${
+          className={cn(
+            "text-[10px] mt-1",
             isUser ? 'text-white/60' : 'text-muted'
-          }`}
+          )}
         >
           {new Date(message.timestamp).toLocaleTimeString([], {
             hour: '2-digit',
